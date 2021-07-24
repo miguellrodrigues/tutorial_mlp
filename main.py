@@ -1,6 +1,7 @@
 from lib.network import Network
+from lib.numbers import random_int
 
-rede = Network([2, 16, 16, 1])
+network = Network([2, 16, 1])
 
 inputs = [
     [0, 0],
@@ -19,20 +20,15 @@ outputs = [
 error = 10
 i = 0
 
-for _ in range(10000):
-    rede.train(inputs[i], [outputs[i]])
+for _ in range(4000):
+    network.train(inputs[i], [outputs[i]])
 
-    i += 1
+    i = random_int(0, 3)
 
-    if i == 4:
-        i = 0
-
-    error = rede.global_error
-
-    print(error)
+    error = network.global_error
 
 
 for i in range(len(inputs)):
-    predict = rede.predict(inputs[i]).get_value(0, 0)
+    predict = network.predict(inputs[i]).get_value(0, 0)
 
     print("Input = {} | Output = {} | Expected = {}".format(inputs[i], outputs[i], predict))
