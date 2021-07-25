@@ -7,10 +7,6 @@ def sigmoid_derived(x):
 
 
 class Neuron:
-    RELU = 0
-    SIGM = 1
-    TANH = 2
-
     def __init__(self, value):
         self.value = value
 
