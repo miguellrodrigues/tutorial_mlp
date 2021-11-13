@@ -13,14 +13,14 @@ class Network:
     self.layers = []
     self.weight_matrices = []
     
-    self.bias = .01
+    self.bias = .001
     
     self.errors = []
     self.derived_errors = []
     
     self.global_error = .0
     
-    self.learning_rate = 1e-3
+    self.learning_rate = 1e-4
     
     self.output_index = self.topology_size - 1
     

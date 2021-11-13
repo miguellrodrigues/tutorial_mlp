@@ -1,23 +1,17 @@
 from lib.network import Network
 
-network = Network([2, 3, 1])
+network = Network([2, 8, 4, 1])
 
 inputs = [
-    [0, 0],
-    [1, 1],
-    [2, 2],
-    [3, 3]
+    [x, x] for x in range(12)
 ]
 
 outputs = [
-    [0],
-    [2],
-    [4],
-    [6]
+    [x/2] for x in range(12)
 ]
 
 
-for _ in range(15000):
+for _ in range(1000):
     for i in range(len(inputs)):
         network.train(inputs[i], outputs[i])
 
@@ -29,4 +23,3 @@ for i in range(len(inputs)):
 
     print("Input = {} | Output = {} | Expected = {}".format(inputs[i], predict, outputs[i]))
 
-print(network.predict([4, 8]))
