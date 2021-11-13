@@ -2,11 +2,11 @@ import numpy as np
 
 
 def sigmoid_activation(x):
-    return max(.1*x, x) # np.tanh(x)
+    return x
 
 
 def sigmoid_derived(x):
-    return x if x > 0 else 0 # 1 - (np.tanh(x) ** 2)
+    return x if x > 0 else 0
 
 
 class Neuron:

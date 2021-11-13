@@ -1,8 +1,22 @@
+import json
+
 import numpy as np
 
 from lib.layer import Layer
 from lib.matrix import Matrix, array_to_matrix, matrix_to_array
 from lib.numbers import random_int, random_double
+
+
+def load_network(path: str):
+  with open(path) as file:
+    data = json.load(file)
+    
+    network = Network(data['topology'])
+    
+    for i in range(len(network.weight_matrices)):
+      network.weight_matrices[i].data = np.array(data['weight_matrices'][i])
+    
+    return network
 
 
 class Network:
@@ -13,13 +27,15 @@ class Network:
     self.layers = []
     self.weight_matrices = []
     
-    self.bias = .001
+    # .01
+    self.bias = .01
     
     self.errors = []
     self.derived_errors = []
     
     self.global_error = .0
     
+    # 1e-3
     self.learning_rate = 1e-4
     
     self.output_index = self.topology_size - 1
@@ -28,13 +44,22 @@ class Network:
       self.layers.append(Layer(topology[i]))
     
     for i in range(self.topology_size - 1):
-      weight_matrix = Matrix(topology[i+1], topology[i], True)
+      weight_matrix = Matrix(topology[i + 1], topology[i], True)
       
       self.weight_matrices.append(weight_matrix)
     
     for i in range(topology[self.topology_size - 1]):
       self.errors.append(.0)
       self.derived_errors.append(.0)
+  
+  def save(self, path: str):
+    data = {'topology': self.topology, 'weight_matrices': []}
+    
+    for matrix in self.weight_matrices:
+      data['weight_matrices'].append(matrix.data.tolist())
+    
+    with open(path, "w") as file:
+      json.dump(data, file)
   
   def set_current_input(self, _in):
     for i in range(_in.rows):
@@ -56,143 +81,143 @@ class Network:
   
   def back_propagation(self):
     weights = []
-  
+    
     gradients = Matrix(self.topology[self.output_index], 1)
-  
+    
     derived_output_values = self.layers[self.output_index].convert_to_matrix(Layer.DERIVED_VALUES)
-  
+    
     for i in range(self.topology[self.output_index]):
       error = self.derived_errors[i]
       output = derived_output_values.get_value(i, 0)
-    
+      
       gradient = error * output
-    
+      
       gradients.set_value(i, 0, gradient)
-  
+    
     last_hidden_layer_activated = self.layers[self.output_index - 1].convert_to_matrix(Layer.ACTIVATED_VALUES)
-  
+    
     delta_weights_last_hidden = gradients.multiply(last_hidden_layer_activated.transpose())
-  
+    
     temp_weights = Matrix(
       self.topology[self.output_index],
       self.topology[self.output_index - 1]
     )
-  
+    
     for i in range(temp_weights.rows):
       for j in range(temp_weights.cols):
         original_value = self.weight_matrices[self.output_index - 1].get_value(i, j)
         delta_value = delta_weights_last_hidden.get_value(i, j)
-      
+        
         delta_value *= self.learning_rate
-      
+        
         temp_weights.set_value(i, j, (original_value - delta_value))
-  
+    
     weights.append(temp_weights)
-  
+    
     i = self.output_index - 1
-  
+    
     # # # # # # # #
-  
+    
     while i > 0:
       _gradients = Matrix(gradients.rows, gradients.cols)
-    
+      
       for j in range(gradients.rows):
         for k in range(gradients.cols):
           _gradients.set_value(j, k, gradients.get_value(j, k))
-    
+      
       transposed_weights = self.weight_matrices[i].transpose()
-    
+      
       gradients = transposed_weights.multiply(_gradients)
-    
+      
       # # # # #
-    
+      
       derived_values = self.layers[i].convert_to_matrix(Layer.DERIVED_VALUES)
-    
+      
       layer_gradients = derived_values.hadamard(gradients)
-    
+      
       for j in range(layer_gradients.rows):
         for k in range(layer_gradients.cols):
           gradients.set_value(j, k, layer_gradients.get_value(j, k))
-    
+      
       if i == 1:
         layer_values = self.layers[0].convert_to_matrix(Layer.VALUES)
       else:
         layer_values = self.layers[i - 1].convert_to_matrix(Layer.ACTIVATED_VALUES)
-    
+      
       delta_weights = gradients.multiply(layer_values.transpose())
-    
+      
       _temp_weights = Matrix(
         self.weight_matrices[i - 1].rows,
         self.weight_matrices[i - 1].cols
       )
-    
+      
       for j in range(_temp_weights.rows):
         for k in range(_temp_weights.cols):
           original_value = self.weight_matrices[i - 1].get_value(j, k)
           delta_value = delta_weights.get_value(j, k)
-        
+          
           delta_value *= self.learning_rate
-        
+          
           _temp_weights.set_value(j, k, (original_value - delta_value))
-    
+      
       weights.append(_temp_weights)
-    
+      
       i -= 1
-  
+    
     self.weight_matrices = []
-  
+    
     for matrix in reversed(weights):
       self.weight_matrices.append(matrix)
-
+  
   def test(self):
     weights = []
-  
+    
     gradients = Matrix(self.topology[self.output_index], 1)
-  
+    
     derived_output_values = self.layers[self.output_index].convert_to_matrix(Layer.DERIVED_VALUES)
-
+    
     gradients.data = derived_output_values.data * np.array(self.derived_errors)
-  
+    
     last_hidden_layer_activated = self.layers[self.output_index - 1].convert_to_matrix(Layer.ACTIVATED_VALUES)
     delta_weights_last_hidden = gradients.multiply(last_hidden_layer_activated.transpose()).scalar(self.learning_rate)
-  
+    
     w = self.weight_matrices[self.output_index - 1].subtract(delta_weights_last_hidden)
-
+    
     weights.append(w)
-  
+    
     i = self.output_index - 1
-  
+    
     # # # # # # # #
-  
+    
     while i > 0:
       _gradients = gradients.copy()
-    
+      
       transposed_weights = self.weight_matrices[i].transpose()
-    
+      
       gradients = transposed_weights.multiply(_gradients)
-    
+      
       # # # # #
-    
+      
       derived_values = self.layers[i].convert_to_matrix(Layer.DERIVED_VALUES)
-    
+      
       layer_gradients = derived_values.hadamard(gradients)
       gradients.data = layer_gradients.data
-    
+      
       if i == 1:
         layer_values = self.layers[0].convert_to_matrix(Layer.VALUES)
       else:
         layer_values = self.layers[i - 1].convert_to_matrix(Layer.ACTIVATED_VALUES)
-    
+      
       delta_weights = gradients.multiply(layer_values.transpose()).scalar(self.learning_rate)
-    
+      
       w = self.weight_matrices[i - 1].subtract(delta_weights)
-
+      
       weights.append(w)
-    
+      
       i -= 1
-  
+    
     self.weight_matrices = []
-  
+    
     for weight in reversed(weights):
       self.weight_matrices.append(weight)
   
@@ -222,8 +247,8 @@ class Network:
     
     self.feed_forward()
     self.set_errors(array_to_matrix(target))
-    self.test()
-
+    self.back_propagation()
+  
   def predict(self, _in):
     self.set_current_input(array_to_matrix(_in))
     self.feed_forward()
