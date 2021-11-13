@@ -1,9 +1,12 @@
+import numpy as np
+
+
 def sigmoid_activation(x):
-    return x / (1 + abs(x))
+    return max(.1*x, x) # np.tanh(x)
 
 
 def sigmoid_derived(x):
-    return 1 / pow((1 + abs(x)), 2.0)
+    return x if x > 0 else 0 # 1 - (np.tanh(x) ** 2)
 
 
 class Neuron:

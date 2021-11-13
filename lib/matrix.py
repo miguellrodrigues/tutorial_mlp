@@ -1,4 +1,5 @@
 from lib.numbers import random_double
+import numpy as np
 
 
 def array_to_matrix(array):
@@ -10,17 +11,26 @@ def array_to_matrix(array):
     return matrix
 
 
+def matrix_to_array(matrix):
+    array = np.zeros(matrix.rows)
+
+    for i in range(matrix.rows):
+        array[i] = matrix.get_value(i, 0)
+
+    return array
+
+
 class Matrix:
     def __init__(self, rows, cols, is_random=False):
         self.rows = rows
         self.cols = cols
 
-        self.data = [[.0] * cols for _i in range(rows)]
+        self.data = np.array([[.0] * cols for _i in range(rows)], dtype=np.float64)
 
         if is_random:
             for i in range(rows):
                 for j in range(cols):
-                    self.data[i][j] = random_double(-.001, .001)
+                    self.data[i][j] = random_double(0, 1)
 
     def set_value(self, row, column, value):
         self.data[row][column] = value
@@ -31,61 +41,49 @@ class Matrix:
     def transpose(self):
         matrix = Matrix(self.cols, self.rows)
 
-        for i in range(self.rows):
-            for j in range(self.cols):
-                matrix.set_value(j, i, self.get_value(i, j))
+        matrix.data = self.data.transpose()
 
         return matrix
 
     def hadamard(self, mx):
         matrix = Matrix(mx.rows, mx.cols)
 
-        for i in range(mx.rows):
-            for j in range(mx.cols):
-                matrix.set_value(i, j, self.get_value(i, j) * mx.get_value(i, j))
+        matrix.data = self.data * mx.data
 
         return matrix
 
     def multiply(self, mx):
         matrix = Matrix(self.rows, mx.cols)
 
-        for i in range(matrix.rows):
-            for j in range(matrix.cols):
-                aux = .0
-
-                for k in range(mx.rows):
-                    aux += self.get_value(i, k) * mx.get_value(k, j)
-
-                matrix.set_value(i, j, aux)
+        matrix.data = self.data @ mx.data
 
         return matrix
 
     def add(self, mx):
         matrix = Matrix(self.rows, self.cols)
 
-        for i in range(self.rows):
-            for j in range(self.cols):
-                matrix.set_value(i, i, self.get_value(i, j) + mx.get_value(i, j))
+        matrix.data = self.data + mx.data
 
         return matrix
 
     def subtract(self, mx):
         matrix = Matrix(self.rows, self.cols)
 
-        for i in range(self.rows):
-            for j in range(self.cols):
-                matrix.set_value(i, i, self.get_value(i, j) - mx.get_value(i, j))
+        matrix.data = self.data - mx.data
 
         return matrix
 
     def scalar(self, x):
         matrix = Matrix(self.rows, self.cols)
 
-        for i in range(self.rows):
-            for j in range(self.cols):
-                matrix.set_value(i, i, self.get_value(i, j) * x)
+        matrix.data = self.data * x
 
         return matrix
+
+    def map(self, func):
+        for i in range(self.rows):
+            for j in range(self.cols):
+                self.set_value(i, j, func(self.get_value(i, j)))
 
     def assign_array(self, array):
         count = 0
@@ -94,6 +92,13 @@ class Matrix:
             for j in range(self.cols):
                 self.set_value(i, j, array[count])
                 count += 1
+          
+    def copy(self):
+        matrix = Matrix(self.rows, self.cols)
+
+        matrix.data = self.data.copy()
+
+        return matrix
 
     def print(self):
         for i in range(self.rows):
